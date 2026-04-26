@@ -3,168 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Movie Finder - Xóa Dấu Vết</title>
+    <title>AI Movie Finder - Free & Private</title>
     <style>
         :root {
-            --primary: #00ff88;
-            --bg: #0b0e14;
-            --card: #161b22;
-            --text: #ffffff;
+            --neon: #00ff88;
+            --dark: #0a0a0a;
         }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--dark);
+            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
-
-        .app-container {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card);
+        .container {
+            background: #151515;
             padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid #30363d;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid #333;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
         }
-
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
-
-        .input-area { margin-bottom: 20px; }
-
+        h2 { color: var(--neon); text-transform: uppercase; letter-spacing: 2px; }
         textarea {
             width: 100%;
-            height: 120px;
-            background: #0d1117;
-            border: 1px solid #30363d;
+            height: 100px;
+            background: #000;
+            border: 1px solid #444;
             border-radius: 12px;
-            color: white;
+            color: var(--neon);
             padding: 15px;
             box-sizing: border-box;
-            font-size: 16px;
-            resize: none;
+            margin-bottom: 20px;
+            font-size: 14px;
             outline: none;
         }
-
-        textarea:focus { border-color: var(--primary); }
-
         button {
             width: 100%;
             padding: 15px;
-            background: var(--primary);
-            color: #000;
             border: none;
             border-radius: 12px;
+            background: var(--neon);
+            color: #000;
             font-weight: bold;
             cursor: pointer;
-            font-size: 16px;
             transition: 0.3s;
         }
-
-        button:hover { opacity: 0.8; transform: translateY(-2px); }
-
-        .result-box {
-            margin-top: 25px;
-            padding: 20px;
-            background: #0d1117;
+        button:hover { background: #00cc6e; transform: scale(1.02); }
+        #resultBox {
+            margin-top: 20px;
+            padding: 15px;
+            background: #000;
             border-radius: 12px;
-            border-left: 4px solid var(--primary);
+            border: 1px dashed var(--neon);
             display: none;
+            animation: fadeIn 0.5s;
         }
-
-        .loading {
-            text-align: center;
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .loader {
             display: none;
-            color: var(--primary);
-            font-style: italic;
+            margin: 10px auto;
+            border: 3px solid #333;
+            border-top: 3px solid var(--neon);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
         }
-
-        .history-status {
-            font-size: 12px;
-            color: #6e7681;
-            text-align: center;
-            margin-top: 15px;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <h2>MOV-AI DETECTOR</h2>
+<div class="container">
+    <h2>MOV-AI FREE</h2>
+    <p style="color: #888; font-size: 13px;">Nhập mô tả phim - AI sẽ đoán và xóa dấu vết</p>
     
-    <div class="input-area">
-        <textarea id="userInput" placeholder="Nhập từ khóa, lời thoại, hoặc mô tả cảnh phim tại đây..."></textarea>
+    <textarea id="userInput" placeholder="Ví dụ: Phim về cậu bé hải tặc mũ rơm đi tìm kho báu..."></textarea>
+    
+    <button id="btn" onclick="askAI()">PHÂN TÍCH NGAY</button>
+    
+    <div id="loader" class="loader"></div>
+
+    <div id="resultBox">
+        <span style="font-size: 12px; color: #888;">Kết quả AI:</span>
+        <div id="aiResponse" style="font-size: 18px; font-weight: bold; margin-top: 5px;"></div>
     </div>
-
-    <button onclick="processAI()">PHÂN TÍCH & TÌM TÊN PHIM</button>
-
-    <div id="loader" class="loading">AI đang suy nghĩ và xóa dấu vết...</div>
-
-    <div id="resultArea" class="result-box">
-        <strong style="color: var(--primary);">Kết quả:</strong>
-        <div id="movieName" style="font-size: 20px; margin-top: 10px;"></div>
-    </div>
-
-    <div class="history-status">Chế độ riêng tư: Lịch sử sẽ bị xóa sau khi tìm xong</div>
 </div>
 
 <script>
-    async function processAI() {
-        const inputField = document.getElementById('userInput');
+    async function askAI() {
+        const input = document.getElementById('userInput');
+        const resBox = document.getElementById('resultBox');
+        const resText = document.getElementById('aiResponse');
         const loader = document.getElementById('loader');
-        const resultArea = document.getElementById('resultArea');
-        const movieNameDisplay = document.getElementById('movieName');
-        
-        const apiKey = "DÁN_API_KEY_OPENAI_CỦA_BẠN_VÀO_ĐÂY"; // QUAN TRỌNG
-        const text = inputField.value;
+        const btn = document.getElementById('btn');
 
-        if (!text) {
-            alert("Vui lòng nhập nội dung!");
-            return;
-        }
+        if (!input.value.trim()) return alert("Hãy nhập gì đó!");
 
-        // Hiện loading và ẩn kết quả cũ
+        // Chuẩn bị dữ liệu
+        const textToAsk = input.value;
         loader.style.display = "block";
-        resultArea.style.display = "none";
+        btn.disabled = true;
+        resBox.style.display = "none";
 
         try {
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            // Sử dụng API miễn phí của Hugging Face (Model chuyên về trả lời câu hỏi)
+            const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o", // Hoặc "gpt-3.5-turbo"
-                    messages: [
-                        { "role": "system", "content": "Bạn là máy nhận diện phim. Chỉ trả về TÊN PHIM duy nhất. Không giải thích thêm." },
-                        { "role": "user", "content": `Dựa vào từ khóa/video này hãy đoán phim: ${text}` }
-                    ],
-                    temperature: 0.5
-                })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ inputs: "Trả lời ngắn gọn tên phim này là gì: " + textToAsk })
             });
 
             const data = await response.json();
-            const result = data.choices[0].message.content;
-
+            
+            // Lấy kết quả trả về
+            let answer = data.generated_text || data[0].generated_text || "Không tìm thấy phim này";
+            
             // Hiển thị kết quả
-            movieNameDisplay.innerText = result;
-            resultArea.style.display = "block";
+            resText.innerText = answer;
+            resBox.style.display = "block";
 
-            // --- CƠ CHẾ XOÁ PHẦN GẦN ĐÂY ---
-            inputField.value = ""; // Xóa trắng ô nhập liệu ngay lập tức
-            console.clear();      // Xóa log rác trên trình duyệt
+            // --- XOÁ DẤU VẾT ---
+            input.value = ""; // Xóa nội dung đã nhập ngay lập tức
+            console.clear();  // Xóa sạch log kỹ thuật
             
         } catch (error) {
-            console.error("Lỗi:", error);
-            alert("Không thể kết nối với AI. Kiểm tra lại API Key!");
+            resText.innerText = "Lỗi kết nối server AI!";
+            resBox.style.display = "block";
         } finally {
             loader.style.display = "none";
+            btn.disabled = false;
         }
     }
 </script>
